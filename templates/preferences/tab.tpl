@@ -3,7 +3,7 @@
 <input type="hidden" name="a" value="saveTab">
 <input type="hidden" name="ext_id" value="cerberusweb.openid.preferences.tab">
 
-<fieldset>
+<fieldset class="peek">
 <legend>Your OpenID Identities</legend>	
 <ul style="margin:5px 0px 0px 10px;padding:0px;list-style:none;">
 	{foreach from=$openids item=openid key=openid_id}
