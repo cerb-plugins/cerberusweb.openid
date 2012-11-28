@@ -1,16 +1,12 @@
 {if !empty($error)}
-<div class="ui-widget">
-	<div class="ui-state-error ui-corner-all" style="padding: 0 .7em; margin: 0.2em; "> 
-		<p>
-		<span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span> 
-		<strong>{$error}</strong><br>
-		</p>
-	</div>
+<div class="error-box">
+	<h1>Error</h1>
+	<p>{$error}</p>
 </div>
 {/if}
 
-<form action="{devblocks_url}c=login&m=delegate&a=discover{/devblocks_url}" method="post" id="loginOpenID">
-<input type="hidden" name="original_path" value="{$original_path}">
+<form action="{devblocks_url}c=login&ext=openid&a=discover{/devblocks_url}" method="post" id="loginOpenID">
+<input type="hidden" name="email" value="{$worker->email}">
 
 <fieldset>
 	<legend>Sign on using OpenID</legend>
@@ -27,11 +23,13 @@
 		<b>Or enter your own OpenID:</b><br>
 		<input type="text" name="openid_url" size="45" class="input_openid">
 		<button type="submit">{$translate->_('header.signon')|capitalize}</button>
+		
+		 &nbsp; 
+		
+		<a href="{devblocks_url}c=login&a=recover{/devblocks_url}?email={$worker->email}" tabindex="-1">can't log in?</a>
 	</div>
 </fieldset>
 </form>
-
-{include file="devblocks:cerberusweb.core::login/switcher.tpl"}
 
 <script type="text/javascript">
 	$(function() {

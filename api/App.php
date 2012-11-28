@@ -1,193 +1,249 @@
 <?php
-class ChOpenIdAjaxController extends CerberusPageExtension {
-	 function isVisible() {
-		// The current session must be a logged-in worker to use this page.
-		if(null == ($worker = CerberusApplication::getActiveWorker()))
-			return false;
-		return true;
-	 }
-	 
-	 function validateAddPrefAction() {
-		$active_worker = CerberusApplication::getActiveWorker();
-	 	$openid = DevblocksPlatform::getOpenIDService();
-	 	
-		if(!$openid->validate($_REQUEST)) {
-			DevblocksPlatform::redirect(new DevblocksHttpResponse(array('preferences','openid','failed')));
-			exit;
-		}
-
-		// Check if the current ID is taken
-		$openids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %s",
-			DAO_OpenIDToWorker::OPENID_CLAIMED_ID,
-			C4_ORMHelper::qstr($_REQUEST['openid_claimed_id'])
-		));
-		
-		if(!empty($openids)) {
-			DevblocksPlatform::redirect(new DevblocksHttpResponse(array('preferences','openid','unavailable')));
-			exit;
-		}
-		
-		// Create the new row when available
-		$fields = array(
-			DAO_OpenIDToWorker::OPENID_URL => $_REQUEST['openid_identity'], 
-			DAO_OpenIDToWorker::OPENID_CLAIMED_ID => $_REQUEST['openid_claimed_id'],
-			DAO_OpenIDToWorker::WORKER_ID => $active_worker->id,
-		);
-		$id = DAO_OpenIDToWorker::create($fields);
-
-		if(!empty($id)) {
-			DevblocksPlatform::redirect(new DevblocksHttpResponse(array('preferences','openid','added')));
-			
-		} else {
-			DevblocksPlatform::redirect(new DevblocksHttpResponse(array('preferences','openid','failed')));
-		}
-		
-	 	exit;
-	 }
-	 
-	 function deletePrefAction() {
-		$active_worker = CerberusApplication::getActiveWorker();
-		
-		@$id = DevblocksPlatform::importGPC($_REQUEST['id'], 'integer', 0);
-		
-		// Make sure the current worker owns the IDs
-		$openids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %d AND %s = %d",
-			DAO_OpenIDToWorker::ID,
-			$id,
-			DAO_OpenIDToWorker::WORKER_ID,
-			$active_worker->id
-		));
-		
-		// For now this is only going to be a single element
-		foreach($openids as $id => $openid) {
-			DAO_OpenIDToWorker::delete($id);
-		}
-		
-		exit;
-	 }
-}
-
-if (class_exists('Extension_PreferenceTab')):
-class ChOpenIdPreferenceTab extends Extension_PreferenceTab {
-	function showTab() {
-		$active_worker = CerberusApplication::getActiveWorker();
-		$tpl = DevblocksPlatform::getTemplateService();
-
-		$openids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %d",
-			DAO_OpenIDToWorker::WORKER_ID, 
-			$active_worker->id
-		));
-		$tpl->assignByRef('openids', $openids);
-		
-		$tpl->display('devblocks:cerberusweb.openid::preferences/tab.tpl');		
-	}
-	
-	function saveTab() {
-		@$openid_url = DevblocksPlatform::importGPC($_POST['openid_url'],'string','');
-		
-		$openid = DevblocksPlatform::getOpenIDService();
-		$url_writer = DevblocksPlatform::getUrlService();
-		
-		if(!empty($openid_url)) {
-			// Verify the OpenID url
-			$auth_url = $openid->getAuthUrl($openid_url, $url_writer->writeNoProxy('c=openid.ajax&a=validateAddPref', true));
-			header("Location: " . $auth_url);
-			exit;
-		}
-		
-		DevblocksPlatform::redirect(new DevblocksHttpResponse(array('preferences','openid')));
-	}
-}
-endif;
-
 if(class_exists('Extension_LoginAuthenticator',true)):
 class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
-	function renderLoginForm() {
+	function render() {
+		@$email = DevblocksPlatform::importGPC($_REQUEST['email'],'string','');
+		
 		$request = DevblocksPlatform::getHttpRequest();
 		$stack = $request->path;
 		
 		@array_shift($stack); // login
+		@array_shift($stack); // openid
+		@$page = array_shift($stack);
 		
-		// draws HTML form of controls needed for login information
-		$tpl = DevblocksPlatform::getTemplateService();
+		if(null == ($worker_id = DAO_Worker::getByEmail($email)))
+			return;
 		
-		// add translations for calls from classes that aren't Page Extensions (mobile plugin, specifically)
-		//$translate = DevblocksPlatform::getTranslationService();
-		//$tpl->assign('translate', $translate);
+		if(null == ($worker = DAO_Worker::get($worker_id)))
+			return;
 		
-		// Must be a valid page controller
-		@$redir_path = explode('/',urldecode(DevblocksPlatform::importGPC($_REQUEST["url"],"string","")));
-		if(is_array($redir_path) && isset($redir_path[0]) && CerberusApplication::getPageManifestByUri($redir_path[0]))
-			$tpl->assign('original_path', implode('/',$redir_path));
+		// Verify that this is a legitimate login extension for this worker
+		if($worker->auth_extension_id != $this->manifest->id)
+			return;
 		
-		switch(array_shift($stack)) {
-			case 'too_many':
-				@$secs = array_shift($stack);
-				$tpl->assign('error', sprintf("The maximum number of simultaneous workers are currently signed on.  The next session expires in %s.", ltrim(_DevblocksTemplateManager::modifier_devblocks_prettytime($secs,true),'+')));
+		switch($page) {
+			case 'setup':
+				@$do_submit = DevblocksPlatform::importGPC($_REQUEST['do_submit'], 'integer', 0);
+				
+				if($do_submit) {
+					$this->_processSetupLoginForm($worker);
+				} else {
+					$this->_renderSetupLoginForm($worker);
+				}
 				break;
-			case 'failed':
-				$tpl->assign('error', 'Login failed.');
+
+			case 'discover':
+				@$openid_url = DevblocksPlatform::importGPC($_POST['openid_url'],'string','');
+				
+				$openid = DevblocksPlatform::getOpenIDService();
+				$url_writer = DevblocksPlatform::getUrlService();
+				
+				$return_url = $url_writer->writeNoProxy('c=login&ext=openid&a=authenticate', true);
+				
+				// [TODO] Handle invalid URLs
+				$auth_url = $openid->getAuthUrl($openid_url, $return_url . '?email=' . $worker->email);
+				DevblocksPlatform::redirectURL($auth_url);
+				break;
+			
+			case 'authenticate':
+				$this->_authenticate($worker);
+				break;
+				
+			default:
+				$open_ids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %d", DAO_OpenIDToWorker::WORKER_ID, $worker_id));
+
+				// if the worker has no chance of logging in w/ OpenID, set up their account
+				if(empty($open_ids)) {
+					$query = array(
+						'email' => $worker->email,
+					);
+					
+					@$code = DevblocksPlatform::importGPC($_REQUEST['code'], 'string', '');
+					
+					if(!empty($code))
+						$query['code'] = $code;
+					
+					DevblocksPlatform::redirect(new DevblocksHttpResponse(array('login','openid','setup'), $query));
+				}
+				
+				$this->_renderLoginForm($worker);
 				break;
 		}
-		
-		$tpl->display('devblocks:cerberusweb.openid::login/login_openid.tpl');
 	}
-	
-	function discoverAction() {
-		@$openid_url = DevblocksPlatform::importGPC($_POST['openid_url'],'string','');
 
-		$openid = DevblocksPlatform::getOpenIDService();
-		$url_writer = DevblocksPlatform::getUrlService();
-		
-		$return_url = $url_writer->writeNoProxy('c=login&a=authenticate', true);
-		
-		// [TODO] Handle invalid URLs
-		$auth_url = $openid->getAuthUrl($openid_url, $return_url);
-		header("Location: " . $auth_url);
-		exit;
+	function renderWorkerPrefs($worker) {
+		$tpl = DevblocksPlatform::getTemplateService();
+		$tpl->assign('worker', $worker);
+		$tpl->display('devblocks:cerberusweb.openid::login/prefs.tpl');
 	}
 	
+	function saveWorkerPrefs($worker) {
+		@$reset_login = DevblocksPlatform::importGPC($_REQUEST['reset_login'], 'integer', 0);
+		
+		$session = DevblocksPlatform::getSessionService();
+		$visit = CerberusApplication::getVisit();
+		$worker = CerberusApplication::getActiveWorker();
+		
+		if($reset_login) {
+			$this->resetCredentials($worker);
+			
+			// If we're not an imposter, go to the login form
+			if(!$visit->isImposter()) {
+				$session->clearAll();
+				$query = array(
+					'email' => $worker->email,
+					//'url' => '', // [TODO] This prefs URL
+				);
+				DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login'), $query));
+			}
+		}
+	}	
+	
+	private function _renderLoginForm($worker) {
+		$tpl = DevblocksPlatform::getTemplateService();
+		
+		$tpl->assign('worker', $worker);
+		
+		$tpl->display('devblocks:cerberusweb.openid::login/login.tpl');
+	}
+	
+	private function _renderSetupLoginForm($worker) {
+		$tpl = DevblocksPlatform::getTemplateService();
+		
+		$tpl->assign('worker', $worker);
+		
+		@$code = DevblocksPlatform::importGPC($_REQUEST['code'], 'string', null);
+		$tpl->assign('code', $code);
+		
+		if(!isset($_SESSION['recovery_code'])) {
+			$recovery_code = CerberusApplication::generatePassword(8);
+			
+			$_SESSION['recovery_code'] = $worker->email . ':' . $recovery_code;
+			
+			// [TODO] Email or SMS it through the new recovery platform service
+			CerberusMail::quickSend($worker->email, 'Your confirmation code', $recovery_code);
+		}
+		
+		$tpl->display('devblocks:cerberusweb.openid::login/setup.tpl');
+	}
+	
+	private function _processSetupLoginForm($worker) {
+		@$openid_url = DevblocksPlatform::importGPC($_POST['openid_url'],'string','');
+		
+		// [TODO] Confirm auth code, try...catch
+		
+		if(isset($_GET['openid_mode'])) {
+			switch($_GET['openid_mode']) {
+				case 'cancel':
+					$query = array(
+						'email' => $_REQUEST['email'],
+					);
+					DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login','openid','setup'), $query));
+					break;
+
+				default:
+					$openid = DevblocksPlatform::getOpenIDService();
+	
+					// If we failed validation
+					if(!$openid->validate($_REQUEST))
+						return false;
+	
+					// Does a worker own this OpenID?
+					$openids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %s",
+						DAO_OpenIDToWorker::OPENID_CLAIMED_ID,
+						C4_ORMHelper::qstr($_REQUEST['openid_claimed_id'])
+					));
+					
+					if(!empty($openids))
+						return false;
+					
+					DAO_OpenIDToWorker::create(array(
+						DAO_OpenIDToWorker::OPENID_CLAIMED_ID => $_REQUEST['openid_claimed_id'],
+						DAO_OpenIDToWorker::OPENID_URL => $_REQUEST['openid_identity'],
+						DAO_OpenIDToWorker::WORKER_ID => $worker->id,
+					));
+					
+					$query = array(
+						'email' => $worker->email,
+					);
+					DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login','openid'), $query));
+					
+					break;
+			}
+			
+		} else {
+			$openid = DevblocksPlatform::getOpenIDService();
+			$url_writer = DevblocksPlatform::getUrlService();
+			
+			$return_url = $url_writer->writeNoProxy('c=login&ext=openid&a=setup', true);
+			
+			// [TODO] Handle invalid URLs
+			$auth_url = $openid->getAuthUrl($openid_url, $return_url . '?do_submit=1&email=' . $worker->email);
+			DevblocksPlatform::redirectURL($auth_url);
+		}
+	}
+
+	function resetCredentials($worker) {
+		DAO_OpenIDToWorker::deleteByWorkerIds($worker->id);
+	}
+	
+	// This is never called because of OpenID redirects, but it needs to exist for the class interface
 	function authenticate() {
-		//var_dump($_REQUEST);
+		return false;
+	}
+	
+	private function _authenticate() {
 		$url_writer = DevblocksPlatform::getUrlService();
 
 		// Mode (Cancel)
 		if(isset($_GET['openid_mode']))
 		switch($_GET['openid_mode']) {
 			case 'cancel':
-				header("Location: " . $url_writer->writeNoProxy('c=login', true));
+				header("Location: " . $url_writer->writeNoProxy('c=login&ext=openid', true));
 				break;
 				
 			default:
 				$openid = DevblocksPlatform::getOpenIDService();
 
-				// If we failed validation
-				if(!$openid->validate($_REQUEST))
-					return false;
-
-				// Get parameters
-				$attribs = $openid->getAttributes($_REQUEST);
-
-				// Does a worker own this OpenID?
-				$openids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %s",
-					DAO_OpenIDToWorker::OPENID_CLAIMED_ID,
-					C4_ORMHelper::qstr($_REQUEST['openid_claimed_id'])
-				));
-				
-				if(null == ($openid_owner = array_shift($openids)) || empty($openid_owner->worker_id))
-					return false;
+				try {
+					// If we failed validation
+					if(!$openid->validate($_REQUEST))
+						throw new CerbException("Authentication failed.");
+	
+					// Get parameters
+					$attribs = $openid->getAttributes($_REQUEST);
+	
+					// Does a worker own this OpenID?
+					$openids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %s",
+						DAO_OpenIDToWorker::WORKER_ID,
+						$worker->id,
+						DAO_OpenIDToWorker::OPENID_CLAIMED_ID,
+						C4_ORMHelper::qstr($_REQUEST['openid_claimed_id'])
+					));
 					
-				if(null != ($worker = DAO_Worker::get($openid_owner->worker_id)) && !$worker->is_disabled) {
-					$session = DevblocksPlatform::getSessionService();
-					$visit = new CerberusVisit();
-					$visit->setWorker($worker);
+					if(null == ($openid_owner = array_shift($openids)) || empty($openid_owner->worker_id))
+						throw new CerbException("Authentication failed.");
 						
-					$session->setVisit($visit);
+					if(null != ($worker = DAO_Worker::get($openid_owner->worker_id)) && !$worker->is_disabled) {
+						$visit = new CerberusVisit();
+						$visit->setWorker($worker);
+						
+						$session = DevblocksPlatform::getSessionService();
+						$session->setVisit($visit);
+						
+						DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login','authenticated')));
+						
+					} else {
+						throw new CerbException("Authentication failed.");
+						
+					}
 					
-					return true;
+				} catch (CerbException $e) {
+					$query = array(
+						'error' => $e->getMessage(),
+					);
+					DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login','openid','failed'), $query));
 					
-				} else {
-					return false;
 				}
 				
 				break;

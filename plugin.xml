@@ -40,53 +40,22 @@
 	</class_loader>
 
 	<!-- Extensions -->
- 
+
 	<extensions>
 
 		<!--  Login Extensions -->
 
 		<extension point="cerberusweb.login">
 			<id>login.openid</id>
-			<name>OpenID Login</name>
+			<name>OpenID</name>
 			<class>
 				<file>api/App.php</file>
 				<name>ChOpenIdLoginModule</name>
 			</class>
 			<params>
-				<param key="switcher_icon" value="images/openid-inputicon.gif" />
-				<param key="switcher_label" value="Log in with OpenID" />
-			</params>
-		</extension>
-
-		<!-- Page Controllers -->
-		
- 		<extension point="cerberusweb.page">
-			<id>cerberusweb.openid.page.ajax</id>
-			<name>Ajax Controller</name>
-			<class>
-				<file>api/App.php</file>
-				<name>ChOpenIdAjaxController</name>
-			</class>
-			<params>
-				<param key="uri" value="openid.ajax" />
-				<param key="menutitle" value="" />
-			</params>
-		</extension>
-
-		<!-- Preference Tab -->
-
-		<extension point="cerberusweb.preferences.tab">
-			<id>cerberusweb.openid.preferences.tab</id>
-			<name>OpenID</name>
-			<class>
-				<file>api/App.php</file>
-				<name>ChOpenIdPreferenceTab</name>
-			</class>
-			<params>
 				<param key="uri" value="openid" />
-    			<param key="title" value="openid.common.openid" />
 			</params>
 		</extension>
-		
-    </extensions> 
+
+	</extensions> 
 </plugin>

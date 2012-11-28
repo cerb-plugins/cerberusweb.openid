@@ -99,6 +99,20 @@ class DAO_OpenIDToWorker extends DevblocksORMHelper {
 		return true;
 	}
 	
+	public static function deleteByWorkerIds($ids) {
+		if(!is_array($ids)) $ids = array($ids);
+		$db = DevblocksPlatform::getDatabaseService();
+		
+		if(empty($ids))
+			return;
+		
+		$ids_list = implode(',', $ids);
+		
+		$db->Execute(sprintf("DELETE FROM openid_to_worker WHERE worker_id IN (%s)", $ids_list));
+		
+		return true;
+	}
+	
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_OpenIDToWorker::getFields();
 		
