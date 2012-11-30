@@ -11,6 +11,12 @@
 <fieldset>
 	<legend>Sign on using OpenID</legend>
 	
+	<b>Email:</b><br>
+	{$worker->email}
+	(<a href="{devblocks_url}c=login&a=reset{/devblocks_url}" tabindex="-1">change</a>)
+	<br>
+	<br>
+	
 	<b>Log in with one of these providers:</b><br>
 	<div>
 		<a href="javascript:;" style="float:left;margin-right:5px;border:1px solid rgb(230,230,230);width:100px;height:50px;background:url('{devblocks_url}c=resource&p=cerberusweb.openid&f=images/providers/google.gif{/devblocks_url}') no-repeat scroll center center;" onclick="$('#loginOpenID input:text[name=openid_url]').val('https://www.google.com/accounts/o8/id').closest('form').submit();"></a>

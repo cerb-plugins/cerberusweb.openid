@@ -20,7 +20,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 		// Verify that this is a legitimate login extension for this worker
 		if($worker->auth_extension_id != $this->manifest->id)
 			return;
-		
+
 		switch($page) {
 			case 'setup':
 				@$do_submit = DevblocksPlatform::importGPC($_REQUEST['do_submit'], 'integer', 0);
@@ -100,9 +100,12 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 	}	
 	
 	private function _renderLoginForm($worker) {
+		@$error = DevblocksPlatform::importGPC($_REQUEST['error'],'string','');
+		
 		$tpl = DevblocksPlatform::getTemplateService();
 		
 		$tpl->assign('worker', $worker);
+		$tpl->assign('error', $error);
 		
 		$tpl->display('devblocks:cerberusweb.openid::login/login.tpl');
 	}
@@ -240,9 +243,10 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 					
 				} catch (CerbException $e) {
 					$query = array(
+						'email' => @$_REQUEST['email'],
 						'error' => $e->getMessage(),
 					);
-					DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login','openid','failed'), $query));
+					DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login','openid'), $query));
 					
 				}
 				
