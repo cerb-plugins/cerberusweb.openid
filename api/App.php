@@ -228,15 +228,11 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 						throw new CerbException("Authentication failed.");
 						
 					if(null != ($worker = DAO_Worker::get($openid_owner->worker_id)) && !$worker->is_disabled) {
-						$visit = new CerberusVisit();
-						$visit->setWorker($worker);
-						
-						$session = DevblocksPlatform::getSessionService();
-						$session->setVisit($visit);
-						
+						$_SESSION['login_authenticated_worker'] = $worker;
 						DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login','authenticated')));
 						
 					} else {
+						unset($_SESSION['login_authenticated_worker']);
 						throw new CerbException("Authentication failed.");
 						
 					}
