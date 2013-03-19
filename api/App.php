@@ -89,7 +89,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 			
 			// If we're not an imposter, go to the login form
 			if(!$visit->isImposter()) {
-				$session->clearAll();
+				$session->clear();
 				$query = array(
 					'email' => $worker->email,
 					//'url' => '', // [TODO] This prefs URL
@@ -97,7 +97,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 				DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login'), $query));
 			}
 		}
-	}	
+	}
 	
 	private function _renderLoginForm($worker) {
 		@$error = DevblocksPlatform::importGPC($_REQUEST['error'],'string','');
@@ -154,7 +154,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 					// Does a worker own this OpenID?
 					$openids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %s",
 						DAO_OpenIDToWorker::OPENID_CLAIMED_ID,
-						C4_ORMHelper::qstr($_REQUEST['openid_claimed_id'])
+						Cerb_ORMHelper::qstr($_REQUEST['openid_claimed_id'])
 					));
 					
 					if(!empty($openids))
@@ -221,7 +221,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 						DAO_OpenIDToWorker::WORKER_ID,
 						$worker->id,
 						DAO_OpenIDToWorker::OPENID_CLAIMED_ID,
-						C4_ORMHelper::qstr($_REQUEST['openid_claimed_id'])
+						Cerb_ORMHelper::qstr($_REQUEST['openid_claimed_id'])
 					));
 					
 					if(null == ($openid_owner = array_shift($openids)) || empty($openid_owner->worker_id))
