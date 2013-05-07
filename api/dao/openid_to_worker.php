@@ -159,7 +159,7 @@ class DAO_OpenIDToWorker extends DevblocksORMHelper {
 		);
 		
 		return $result;
-	}	
+	}
 	
     /**
      * Enter description here...
@@ -185,7 +185,7 @@ class DAO_OpenIDToWorker extends DevblocksORMHelper {
 		$has_multiple_values = $query_parts['has_multiple_values'];
 		$sort_sql = $query_parts['sort'];
 		
-		$sql = 
+		$sql =
 			$select_sql.
 			$join_sql.
 			$where_sql.
@@ -214,7 +214,7 @@ class DAO_OpenIDToWorker extends DevblocksORMHelper {
 
 		// [JAS]: Count all
 		if($withCounts) {
-			$count_sql = 
+			$count_sql =
 				($has_multiple_values ? "SELECT COUNT(DISTINCT openid_to_worker.id) " : "SELECT COUNT(openid_to_worker.id) ").
 				$join_sql.
 				$where_sql;
@@ -247,19 +247,10 @@ class SearchFields_OpenIDToWorker implements IDevblocksSearchFields {
 			self::WORKER_ID => new DevblocksSearchField(self::WORKER_ID, 'openid_to_worker', 'worker_id', $translate->_('dao.openid_to_worker.worker_id')),
 		);
 		
-		// Custom Fields
-		//$fields = DAO_CustomField::getByContext(CerberusContexts::XXX);
-
-		//if(is_array($fields))
-		//foreach($fields as $field_id => $field) {
-		//	$key = 'cf_'.$field_id;
-		//	$columns[$key] = new DevblocksSearchField($key,$key,'field_value',$field->name,$field->type);
-		//}
-		
 		// Sort by label (translation-conscious)
 		DevblocksPlatform::sortObjects($columns, 'db_label');
 
-		return $columns;		
+		return $columns;
 	}
 };
 
@@ -478,6 +469,6 @@ class View_OpenIDToWorker extends C4_AbstractView {
 		}
 
 		unset($ids);
-	}			
+	}
 };
 
