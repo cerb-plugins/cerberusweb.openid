@@ -11,10 +11,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 		@array_shift($stack); // openid
 		@$page = array_shift($stack);
 		
-		if(null == ($worker_id = DAO_Worker::getByEmail($email)))
-			return;
-		
-		if(null == ($worker = DAO_Worker::get($worker_id)))
+		if(null == ($worker = DAO_Worker::getByEmail($email)))
 			return;
 		
 		// Verify that this is a legitimate login extension for this worker
@@ -50,7 +47,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 				break;
 				
 			default:
-				$open_ids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %d", DAO_OpenIDToWorker::WORKER_ID, $worker_id));
+				$open_ids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %d", DAO_OpenIDToWorker::WORKER_ID, $worker->id));
 
 				// if the worker has no chance of logging in w/ OpenID, set up their account
 				if(empty($open_ids)) {
