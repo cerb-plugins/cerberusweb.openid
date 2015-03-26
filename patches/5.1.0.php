@@ -17,7 +17,7 @@ if(!isset($tables['openid_to_worker'])) {
 			UNIQUE openid_claimed_id (openid_claimed_id)
 		) ENGINE=%s;
 	", APP_DB_ENGINE);
-	$db->Execute($sql);
+	$db->ExecuteMaster($sql);
 
 	$tables['openid_to_worker'] = 'openid_to_worker';
 }
