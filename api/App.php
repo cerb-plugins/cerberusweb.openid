@@ -38,7 +38,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 				$return_url = $url_writer->writeNoProxy('c=login&ext=openid&a=authenticate', true);
 				
 				// [TODO] Handle invalid URLs
-				$auth_url = $openid->getAuthUrl($openid_url, $return_url . '?email=' . $worker->email);
+				$auth_url = $openid->getAuthUrl($openid_url, $return_url . '?email=' . $worker->getEmailString());
 				DevblocksPlatform::redirectURL($auth_url);
 				break;
 			
@@ -52,7 +52,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 				// if the worker has no chance of logging in w/ OpenID, set up their account
 				if(empty($open_ids)) {
 					$query = array(
-						'email' => $worker->email,
+						'email' => $worker->getEmailString(),
 					);
 					
 					@$code = DevblocksPlatform::importGPC($_REQUEST['code'], 'string', '');
@@ -88,7 +88,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 			if(!$visit->isImposter()) {
 				$session->clear();
 				$query = array(
-					'email' => $worker->email,
+					'email' => $worker->getEmailString(),
 					//'url' => '', // [TODO] This prefs URL
 				);
 				DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login'), $query));
@@ -118,10 +118,10 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 		if(!isset($_SESSION['recovery_code'])) {
 			$recovery_code = CerberusApplication::generatePassword(8);
 			
-			$_SESSION['recovery_code'] = $worker->email . ':' . $recovery_code;
+			$_SESSION['recovery_code'] = $worker->getEmailString() . ':' . $recovery_code;
 			
 			// [TODO] Email or SMS it through the new recovery platform service
-			CerberusMail::quickSend($worker->email, 'Your confirmation code', $recovery_code);
+			CerberusMail::quickSend($worker->getEmailString(), 'Your confirmation code', $recovery_code);
 		}
 		
 		$tpl->display('devblocks:cerberusweb.openid::login/setup.tpl');
@@ -164,7 +164,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 					));
 					
 					$query = array(
-						'email' => $worker->email,
+						'email' => $worker->getEmailString(),
 					);
 					DevblocksPlatform::redirect(new DevblocksHttpRequest(array('login','openid'), $query));
 					
@@ -178,7 +178,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 			$return_url = $url_writer->writeNoProxy('c=login&ext=openid&a=setup', true);
 			
 			// [TODO] Handle invalid URLs
-			$auth_url = $openid->getAuthUrl($openid_url, $return_url . '?do_submit=1&email=' . $worker->email);
+			$auth_url = $openid->getAuthUrl($openid_url, $return_url . '?do_submit=1&email=' . $worker->getEmailString());
 			DevblocksPlatform::redirectURL($auth_url);
 		}
 	}

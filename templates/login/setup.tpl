@@ -1,5 +1,5 @@
 <form action="{devblocks_url}c=login&ext=openid&a=setup{/devblocks_url}" method="POST" id="myAccountOpenId">
-<input type="hidden" name="email" value="{$worker->email}">
+<input type="hidden" name="email" value="{$worker->getEmailString()}">
 
 <div class="help-box">
 	<h1>You need to finish setting up your account</h1>
@@ -14,7 +14,7 @@
 </div>
 
 <fieldset>
-	<legend>Step 1: Type the confirmation code that was sent to {$worker->email}</legend>
+	<legend>Step 1: Type the confirmation code that was sent to {$worker->getEmailString()}</legend>
 	
 	<input type="text" name="confirm_code" value="{$code}" size="10" maxlength="8" autocomplete="off">
 </fieldset>

@@ -6,13 +6,13 @@
 {/if}
 
 <form action="{devblocks_url}c=login&ext=openid&a=discover{/devblocks_url}" method="post" id="loginOpenID">
-<input type="hidden" name="email" value="{$worker->email}">
+<input type="hidden" name="email" value="{$worker->getEmailString()}">
 
 <fieldset>
 	<legend>Sign on using OpenID</legend>
 	
 	<b>Email:</b><br>
-	{$worker->email}
+	{$worker->getEmailString()}
 	(<a href="{devblocks_url}c=login&a=reset{/devblocks_url}" tabindex="-1">change</a>)
 	<br>
 	<br>
@@ -32,7 +32,7 @@
 		
 		 &nbsp; 
 		
-		<a href="{devblocks_url}c=login&a=recover{/devblocks_url}?email={$worker->email}" tabindex="-1">can't log in?</a>
+		<a href="{devblocks_url}c=login&a=recover{/devblocks_url}?email={$worker->getEmailString()}" tabindex="-1">can't log in?</a>
 	</div>
 </fieldset>
 </form>
