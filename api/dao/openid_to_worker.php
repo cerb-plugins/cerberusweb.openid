@@ -1,5 +1,5 @@
 <?php
-class DAO_OpenIDToWorker extends DevblocksORMHelper {
+class DAO_OpenIDToWorker extends Cerb_ORMHelper {
 	const ID = 'id';
 	const OPENID_URL = 'openid_url';
 	const OPENID_CLAIMED_ID = 'openid_claimed_id';
@@ -119,10 +119,6 @@ class DAO_OpenIDToWorker extends DevblocksORMHelper {
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_OpenIDToWorker::getFields();
 		
-		// Sanitize
-		if('*'==substr($sortBy,0,1) || !isset($fields[$sortBy]))
-			$sortBy=null;
-
 		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy);
 		
 		$select_sql = sprintf("SELECT ".
@@ -150,7 +146,7 @@ class DAO_OpenIDToWorker extends DevblocksORMHelper {
 		$where_sql = "".
 			(!empty($wheres) ? sprintf("WHERE %s ",implode(' AND ',$wheres)) : "WHERE 1 ");
 			
-		$sort_sql = (!empty($sortBy)) ? sprintf("ORDER BY %s %s ",$sortBy,($sortAsc || is_null($sortAsc))?"ASC":"DESC") : " ";
+		$sort_sql = self::_buildSortClause($sortBy, $sortAsc, $fields);
 		
 		$result = array(
 			'primary_table' => 'openid_to_worker',
@@ -243,10 +239,10 @@ class SearchFields_OpenIDToWorker implements IDevblocksSearchFields {
 		$translate = DevblocksPlatform::getTranslationService();
 		
 		$columns = array(
-			self::ID => new DevblocksSearchField(self::ID, 'openid_to_worker', 'id', $translate->_('dao.openid_to_worker.id')),
-			self::OPENID_URL => new DevblocksSearchField(self::OPENID_URL, 'openid_to_worker', 'openid_url', $translate->_('dao.openid_to_worker.openid_url')),
-			self::OPENID_CLAIMED_ID => new DevblocksSearchField(self::OPENID_CLAIMED_ID, 'openid_to_worker', 'openid_claimed_id', $translate->_('dao.openid_to_worker.openid_claimed_id')),
-			self::WORKER_ID => new DevblocksSearchField(self::WORKER_ID, 'openid_to_worker', 'worker_id', $translate->_('dao.openid_to_worker.worker_id')),
+			self::ID => new DevblocksSearchField(self::ID, 'openid_to_worker', 'id', $translate->_('dao.openid_to_worker.id'), null, true),
+			self::OPENID_URL => new DevblocksSearchField(self::OPENID_URL, 'openid_to_worker', 'openid_url', $translate->_('dao.openid_to_worker.openid_url'), null, true),
+			self::OPENID_CLAIMED_ID => new DevblocksSearchField(self::OPENID_CLAIMED_ID, 'openid_to_worker', 'openid_claimed_id', $translate->_('dao.openid_to_worker.openid_claimed_id'), null, true),
+			self::WORKER_ID => new DevblocksSearchField(self::WORKER_ID, 'openid_to_worker', 'worker_id', $translate->_('dao.openid_to_worker.worker_id'), null, true),
 		);
 		
 		// Sort by label (translation-conscious)
