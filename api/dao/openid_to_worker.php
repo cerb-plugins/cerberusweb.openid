@@ -122,7 +122,7 @@ class DAO_OpenIDToWorker extends Cerb_ORMHelper {
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_OpenIDToWorker::getFields();
 		
-		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy);
+		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy, array(), 'openid_to_worker.id');
 		
 		$select_sql = sprintf("SELECT ".
 			"openid_to_worker.id as %s, ".
