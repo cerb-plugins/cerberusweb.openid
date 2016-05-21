@@ -122,7 +122,7 @@ class DAO_OpenIDToWorker extends Cerb_ORMHelper {
 	public static function getSearchQueryComponents($columns, $params, $sortBy=null, $sortAsc=null) {
 		$fields = SearchFields_OpenIDToWorker::getFields();
 		
-		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, $fields, $sortBy, array(), 'openid_to_worker.id');
+		list($tables,$wheres) = parent::_parseSearchParams($params, $columns, 'SearchFields_OpenIDToWorker', $sortBy);
 		
 		$select_sql = sprintf("SELECT ".
 			"openid_to_worker.id as %s, ".
@@ -137,19 +137,10 @@ class DAO_OpenIDToWorker extends Cerb_ORMHelper {
 			
 		$join_sql = "FROM openid_to_worker ";
 		
-		// Custom field joins
-		//list($select_sql, $join_sql, $has_multiple_values) = self::_appendSelectJoinSqlForCustomFieldTables(
-		//	$tables,
-		//	$params,
-		//	'openid_to_worker.id',
-		//	$select_sql,
-		//	$join_sql
-		//);
-				
 		$where_sql = "".
 			(!empty($wheres) ? sprintf("WHERE %s ",implode(' AND ',$wheres)) : "WHERE 1 ");
 			
-		$sort_sql = self::_buildSortClause($sortBy, $sortAsc, $fields);
+		$sort_sql = self::_buildSortClause($sortBy, $sortAsc, $fields, $select_sql, 'SearchFields_OpenIDToWorker');
 		
 		$result = array(
 			'primary_table' => 'openid_to_worker',
@@ -234,16 +225,46 @@ class DAO_OpenIDToWorker extends Cerb_ORMHelper {
 
 };
 
-class SearchFields_OpenIDToWorker implements IDevblocksSearchFields {
+class SearchFields_OpenIDToWorker extends DevblocksSearchFields {
 	const ID = 'o_id';
 	const OPENID_URL = 'o_openid_url';
 	const OPENID_CLAIMED_ID = 'o_openid_claimed_id';
 	const WORKER_ID = 'o_worker_id';
 	
+	static private $_fields = null;
+	
+	static function getPrimaryKey() {
+		return 'openid_to_worker.id';
+	}
+	
+	static function getCustomFieldContextKeys() {
+		return array(
+			'' => new DevblocksSearchFieldContextKeys('openid_to_worker.id', self::ID),
+		);
+	}
+	
+	static function getWhereSQL(DevblocksSearchCriteria $param) {
+		if('cf_' == substr($param->field, 0, 3)) {
+			return self::_getWhereSQLFromCustomFields($param);
+		} else {
+			return $param->getWhereSQL(self::getFields(), self::getPrimaryKey());
+		}
+	}
+	
 	/**
 	 * @return DevblocksSearchField[]
 	 */
 	static function getFields() {
+		if(is_null(self::$_fields))
+			self::$_fields = self::_getFields();
+		
+		return self::$_fields;
+	}
+	
+	/**
+	 * @return DevblocksSearchField[]
+	 */
+	static function _getFields() {
 		$translate = DevblocksPlatform::getTranslationService();
 		
 		$columns = array(
@@ -305,6 +326,9 @@ class View_OpenIDToWorker extends C4_AbstractView {
 			$this->renderSortAsc,
 			$this->renderTotal
 		);
+		
+		$this->_lazyLoadCustomFieldsIntoObjects($objects, 'SearchFields_OpenIDToWorker');
+		
 		return $objects;
 	}
 
