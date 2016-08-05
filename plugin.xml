@@ -4,7 +4,7 @@
 	<name>OpenID Integration</name>
 	<description>Authenticate worker logins via OpenID</description>
 	<author>Webgroup Media, LLC.</author>
-	<version>1.0.26</version>
+	<version>1.0.27</version>
 	<link>http://www.cerbweb.com/book/latest/plugins/cerberusweb.openid.html</link>
 	<image>plugin.png</image>
 
