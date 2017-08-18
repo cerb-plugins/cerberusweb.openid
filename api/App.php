@@ -32,8 +32,8 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 			case 'discover':
 				@$openid_url = DevblocksPlatform::importGPC($_POST['openid_url'],'string','');
 				
-				$openid = DevblocksPlatform::getOpenIDService();
-				$url_writer = DevblocksPlatform::getUrlService();
+				$openid = DevblocksPlatform::services()->openid();
+				$url_writer = DevblocksPlatform::services()->url();
 				
 				$return_url = $url_writer->writeNoProxy('c=login&ext=openid&a=authenticate', true);
 				
@@ -69,7 +69,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 	}
 
 	function renderWorkerPrefs($worker) {
-		$tpl = DevblocksPlatform::getTemplateService();
+		$tpl = DevblocksPlatform::services()->template();
 		$tpl->assign('worker', $worker);
 		$tpl->display('devblocks:cerberusweb.openid::login/prefs.tpl');
 	}
@@ -77,7 +77,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 	function saveWorkerPrefs($worker) {
 		@$reset_login = DevblocksPlatform::importGPC($_REQUEST['reset_login'], 'integer', 0);
 		
-		$session = DevblocksPlatform::getSessionService();
+		$session = DevblocksPlatform::services()->session();
 		$visit = CerberusApplication::getVisit();
 		$worker = CerberusApplication::getActiveWorker();
 		
@@ -99,7 +99,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 	private function _renderLoginForm($worker) {
 		@$error = DevblocksPlatform::importGPC($_REQUEST['error'],'string','');
 		
-		$tpl = DevblocksPlatform::getTemplateService();
+		$tpl = DevblocksPlatform::services()->template();
 		
 		$tpl->assign('worker', $worker);
 		$tpl->assign('error', $error);
@@ -108,7 +108,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 	}
 	
 	private function _renderSetupLoginForm($worker) {
-		$tpl = DevblocksPlatform::getTemplateService();
+		$tpl = DevblocksPlatform::services()->template();
 		
 		$tpl->assign('worker', $worker);
 		
@@ -142,7 +142,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 					break;
 
 				default:
-					$openid = DevblocksPlatform::getOpenIDService();
+					$openid = DevblocksPlatform::services()->openid();
 	
 					// If we failed validation
 					if(!$openid->validate($_REQUEST))
@@ -172,8 +172,8 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 			}
 			
 		} else {
-			$openid = DevblocksPlatform::getOpenIDService();
-			$url_writer = DevblocksPlatform::getUrlService();
+			$openid = DevblocksPlatform::services()->openid();
+			$url_writer = DevblocksPlatform::services()->url();
 			
 			$return_url = $url_writer->writeNoProxy('c=login&ext=openid&a=setup', true);
 			
@@ -193,7 +193,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 	}
 	
 	private function _authenticate() {
-		$url_writer = DevblocksPlatform::getUrlService();
+		$url_writer = DevblocksPlatform::services()->url();
 
 		// Mode (Cancel)
 		if(isset($_GET['openid_mode']))
@@ -203,7 +203,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 				break;
 				
 			default:
-				$openid = DevblocksPlatform::getOpenIDService();
+				$openid = DevblocksPlatform::services()->openid();
 
 				try {
 					// If we failed validation
