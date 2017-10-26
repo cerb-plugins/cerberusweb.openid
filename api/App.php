@@ -120,8 +120,14 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 			
 			$_SESSION['recovery_code'] = $worker->getEmailString() . ':' . $recovery_code;
 			
-			// [TODO] Email or SMS it through the new recovery platform service
-			CerberusMail::quickSend($worker->getEmailString(), 'Your confirmation code', $recovery_code);
+			$labels = $values = [];
+			CerberusContexts::getContext(CerberusContexts::CONTEXT_WORKER, $worker, $worker_labels, $worker_values, '', true, true);
+			CerberusContexts::merge('worker_', null, $worker_labels, $worker_values, $labels, $values);
+			
+			$values['code'] = $recovery_code;
+			$values['ip'] = DevblocksPlatform::getClientIp();
+			
+			CerberusApplication::sendEmailTemplate($worker->getEmailString(), 'worker_recover', $values);
 		}
 		
 		$tpl->display('devblocks:cerberusweb.openid::login/setup.tpl');
