@@ -214,7 +214,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 				try {
 					// If we failed validation
 					if(!$openid->validate($_REQUEST))
-						throw new CerbException("Authentication failed.");
+						throw new CerbException("auth.failed");
 	
 					// Get parameters
 					$attribs = $openid->getAttributes($_REQUEST);
@@ -228,7 +228,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 					));
 					
 					if(null == ($openid_owner = array_shift($openids)) || empty($openid_owner->worker_id))
-						throw new CerbException("Authentication failed.");
+						throw new CerbException("auth.failed");
 						
 					if(null != ($worker = DAO_Worker::get($openid_owner->worker_id)) && !$worker->is_disabled) {
 						$_SESSION['login_authenticated_worker'] = $worker;
@@ -236,7 +236,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 						
 					} else {
 						unset($_SESSION['login_authenticated_worker']);
-						throw new CerbException("Authentication failed.");
+						throw new CerbException("auth.failed");
 						
 					}
 					
