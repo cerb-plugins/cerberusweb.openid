@@ -338,9 +338,6 @@ class View_OpenIDToWorker extends C4_AbstractView {
 		$this->addColumnsHidden(array(
 		));
 		
-		$this->addParamsHidden(array(
-		));
-		
 		$this->doResetCriteria();
 	}
 
@@ -373,41 +370,6 @@ class View_OpenIDToWorker extends C4_AbstractView {
 
 		// [TODO] Set your template path
 		$tpl->display('devblocks:/path/to/view.tpl');
-	}
-
-	function renderCriteria($field) {
-		$tpl = DevblocksPlatform::services()->template();
-		$tpl->assign('id', $this->id);
-
-		// [TODO] Move the fields into the proper data type
-		switch($field) {
-			case SearchFields_OpenIDToWorker::ID:
-			case SearchFields_OpenIDToWorker::OPENID_URL:
-			case SearchFields_OpenIDToWorker::OPENID_CLAIMED_ID:
-			case SearchFields_OpenIDToWorker::WORKER_ID:
-			case 'placeholder_string':
-				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__string.tpl');
-				break;
-			case 'placeholder_number':
-				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__number.tpl');
-				break;
-			case 'placeholder_bool':
-				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__bool.tpl');
-				break;
-			case 'placeholder_date':
-				$tpl->display('devblocks:cerberusweb.core::internal/views/criteria/__date.tpl');
-				break;
-			/*
-			default:
-				// Custom Fields
-				if('cf_' == substr($field,0,3)) {
-					$this->_renderCriteriaCustomField($tpl, substr($field,3));
-				} else {
-					echo ' ';
-				}
-				break;
-			*/
-		}
 	}
 
 	function renderCriteriaParam($param) {
