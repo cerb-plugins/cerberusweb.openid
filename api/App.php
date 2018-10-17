@@ -100,9 +100,12 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 		@$error = DevblocksPlatform::importGPC($_REQUEST['error'],'string','');
 		
 		$tpl = DevblocksPlatform::services()->template();
-		
 		$tpl->assign('worker', $worker);
-		$tpl->assign('error', $error);
+		
+		if($error) {
+			$error_msg = ChSignInPage::getErrorMessage($error);
+			$tpl->assign('error', $error_msg);
+		}
 		
 		$tpl->display('devblocks:cerberusweb.openid::login/login.tpl');
 	}
@@ -120,7 +123,7 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 			
 			$_SESSION['recovery_code'] = $worker->getEmailString() . ':' . $recovery_code;
 			
-			$labels = $values = [];
+			$labels = $values = $worker_labels = $worker_values = [];
 			CerberusContexts::getContext(CerberusContexts::CONTEXT_WORKER, $worker, $worker_labels, $worker_values, '', true, true);
 			CerberusContexts::merge('worker_', null, $worker_labels, $worker_values, $labels, $values);
 			
@@ -210,19 +213,33 @@ class ChOpenIdLoginModule extends Extension_LoginAuthenticator {
 				
 			default:
 				$openid = DevblocksPlatform::services()->openid();
+				@$email = DevblocksPlatform::importGPC($_REQUEST['email'],'string','');
 
 				try {
+					// Look up worker by email
+					if(null == ($address = DAO_Address::getByEmail($email)))
+						return false;
+					
+					if(null == ($worker = $address->getWorker()))
+						return false;
+					
+					if($worker->auth_extension_id != $this->manifest->id)
+						return false;
+					
+					if($worker->is_disabled)
+						return false;
+					
 					// If we failed validation
 					if(!$openid->validate($_REQUEST))
 						throw new CerbException("auth.failed");
 	
 					// Get parameters
-					$attribs = $openid->getAttributes($_REQUEST);
+					//$attribs = $openid->getAttributes($_REQUEST);
 	
-					// Does a worker own this OpenID?
-					$openids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %s",
+					// Does the worker own this OpenID?
+					$openids = DAO_OpenIDToWorker::getWhere(sprintf("%s = %d",
 						DAO_OpenIDToWorker::WORKER_ID,
-						$worker->id,
+						
 						DAO_OpenIDToWorker::OPENID_CLAIMED_ID,
 						Cerb_ORMHelper::qstr($_REQUEST['openid_claimed_id'])
 					));
